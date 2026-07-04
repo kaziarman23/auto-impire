@@ -14,8 +14,20 @@ const orderListApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ["Orders"],
     }),
+    updateOrderStatus: builder.mutation({
+      query: ({ id, orderStatus }) => ({
+        url: "/api/orders",
+        method: "PATCH",
+        body: { id, orderStatus },
+      }),
+    }),
   }),
 });
 
-export const { useGetOrdersQuery, useAddOrderMutation } = orderListApi;
+export const {
+  useGetOrdersQuery,
+  useAddOrderMutation,
+  useUpdateOrderStatusMutation,
+} = orderListApi;
+
 export default orderListApi;

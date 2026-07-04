@@ -63,3 +63,49 @@ export async function POST(request) {
     );
   }
 }
+
+// PATCH: Update order status
+export async function PATCH(request) {
+  try {
+    await connectDB();
+    const body = await request.json();
+
+    const { id, orderStatus } = body;
+
+    if (!id || !orderStatus) {
+      return NextResponse.json(
+        { message: "Missing required fields: id and orderStatus" },
+        { status: 400 },
+      );
+    }
+
+    // "Pending" added — matches your actual data
+    const VALID_STATUSES = ["Pending", "Processing", "Delivered", "Cancelled"];
+    if (!VALID_STATUSES.includes(orderStatus)) {
+      return NextResponse.json(
+        {
+          message: `Invalid orderStatus. Must be one of: ${VALID_STATUSES.join(", ")}`,
+        },
+        { status: 400 },
+      );
+    }
+
+    const updatedOrder = await OrderList.findByIdAndUpdate(
+      id,
+      { orderStatus },
+      { new: true },
+    );
+
+    if (!updatedOrder) {
+      return NextResponse.json({ message: "Order not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(updatedOrder, { status: 200 });
+  } catch (error) {
+    console.error("Error updating order status:", error);
+    return NextResponse.json(
+      { message: "Failed to update order status" },
+      { status: 500 },
+    );
+  }
+}
