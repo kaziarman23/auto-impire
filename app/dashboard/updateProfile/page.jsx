@@ -2,17 +2,56 @@
 
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { Button } from "../../../components/ui/button";
 import { useUpdateUserProfileMutation } from "../../redux/api/usersApi";
+import { setUser } from "../../redux/slices/userSlice";
+import { Button } from "../../../components/ui/button";
 import useToast from "../../../components/Shared/useCustomToast";
 import { useRouter } from "next/navigation";
-import { setUser } from "../../redux/slices/userSlice";
+import { motion } from "framer-motion";
+import {
+  HiOutlineUser,
+  HiOutlinePhoto,
+  HiOutlineCheckCircle,
+  HiOutlineXCircle,
+} from "react-icons/hi2";
 
-function UpdateProfile() {
-  // states
+const FIELDS = [
+  {
+    key: "userName",
+    label: "Display name",
+    type: "text",
+    icon: HiOutlineUser,
+    placeholder: "Your full name",
+    required: true,
+  },
+  {
+    key: "userPhoto",
+    label: "Photo URL",
+    type: "url",
+    icon: HiOutlinePhoto,
+    placeholder: "https://example.com/photo.jpg",
+    required: false,
+  },
+];
+
+const containerVariants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07 } },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.35, ease: [0.25, 0.1, 0.25, 1] },
+  },
+};
+
+export default function UpdateProfile() {
   const currentUser = useSelector((state) => state.user);
   const dispatch = useDispatch();
-  const [updateUserProfile] = useUpdateUserProfileMutation();
+  const [updateUserProfile, { isLoading }] = useUpdateUserProfileMutation();
   const { showSuccess, showError } = useToast();
   const router = useRouter();
 
@@ -23,96 +62,114 @@ function UpdateProfile() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const userInfo = {
-      userEmail: currentUser.userEmail,
-      ...formData,
-    };
-
     try {
-      // updating user data in database
-      const updatedUser = await updateUserProfile(userInfo).unwrap();
-
-      // updating user data in redux store
+      const updatedUser = await updateUserProfile({
+        userEmail: currentUser.userEmail,
+        ...formData,
+      }).unwrap();
       dispatch(setUser(updatedUser));
-
-      // showing notification and navigating the user
-      showSuccess("Profile Updated Successfully");
+      showSuccess("Profile updated");
       router.push("/dashboard/profile");
-    } catch (error) {
-      // showing notification and navigating the user
-      console.error("Update error:", error);
-      showError("Something went wrong!");
+    } catch (err) {
+      console.error("Update error:", err);
+      showError("Something went wrong");
       router.push("/dashboard/profile");
     }
   };
 
-  const handleCancel = () => {
-    router.push("/dashboard/profile");
-  };
-
   return (
-    <div className="mt-10 flex h-full items-center justify-center px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-xl space-y-6 rounded-2xl bg-black p-6 text-white shadow-lg sm:p-8"
+    <div className="mt-10 flex justify-center px-4 pb-12">
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="w-full max-w-lg"
       >
-        <h2 className="text-center text-2xl font-bold">Update Profile</h2>
+        {/* Eyebrow */}
+        <motion.p
+          variants={itemVariants}
+          className="mb-2 text-[11px] uppercase tracking-widest text-gray-600"
+        >
+          Account
+        </motion.p>
 
-        <div>
-          <label
-            className="mb-1 block text-sm font-semibold text-muted-foreground"
-            htmlFor="userName"
+        {/* Card */}
+        <motion.form
+          variants={itemVariants}
+          onSubmit={handleSubmit}
+          className="border-white/8 rounded-2xl border bg-white/5 p-6 sm:p-8"
+        >
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-lg font-medium text-white">Edit profile</h1>
+            <p className="mt-0.5 text-[13px] text-gray-500">
+              Changes will reflect across your account immediately.
+            </p>
+          </div>
+
+          <div className="bg-white/8 mb-5 h-px" />
+
+          {/* Fields */}
+          <div className="space-y-5">
+            {FIELDS.map(
+              ({ key, label, type, icon: Icon, placeholder, required }) => (
+                <motion.div key={key} variants={itemVariants}>
+                  <label
+                    htmlFor={key}
+                    className="mb-1.5 flex items-center gap-1.5 text-[11px] uppercase tracking-widest text-gray-600"
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                    {required && <span className="text-orange-500">*</span>}
+                  </label>
+                  <input
+                    id={key}
+                    name={key}
+                    type={type}
+                    value={formData[key]}
+                    onChange={handleChange}
+                    placeholder={placeholder}
+                    required={required}
+                    className="border-white/8 focus:bg-white/8 w-full rounded-lg border bg-white/5 px-3 py-2.5 text-sm text-white placeholder-gray-600 outline-none transition-colors focus:border-orange-500/50"
+                  />
+                </motion.div>
+              ),
+            )}
+          </div>
+
+          <div className="bg-white/8 my-6 h-px" />
+
+          {/* Actions */}
+          <motion.div
+            variants={itemVariants}
+            className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"
           >
-            Name
-          </label>
-          <input
-            id="userName"
-            name="userName"
-            type="text"
-            value={formData.userName}
-            onChange={handleChange}
-            className="w-full rounded-lg p-2 text-white"
-            required
-          />
-        </div>
-
-        <div>
-          <label
-            className="mb-1 block text-sm font-semibold text-muted-foreground"
-            htmlFor="userPhoto"
-          >
-            Photo URL
-          </label>
-          <input
-            id="userPhoto"
-            name="userPhoto"
-            type="text"
-            value={formData.userPhoto}
-            onChange={handleChange}
-            className="w-full rounded-lg p-2 text-white"
-          />
-        </div>
-
-        <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
-          <Button type="button" variant="destructive" onClick={handleCancel}>
-            Cancel
-          </Button>
-          <Button type="submit" variant="success">
-            Save Changes
-          </Button>
-        </div>
-      </form>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => router.push("/dashboard/profile")}
+              className="flex items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-gray-400 transition-colors hover:bg-white/10 hover:text-white"
+            >
+              <HiOutlineXCircle className="h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="success"
+              disabled={isLoading}
+              className="flex items-center justify-center gap-2 rounded-lg border border-orange-500/30 bg-orange-500/10 px-4 py-2 text-sm font-medium text-orange-400 transition-colors hover:bg-orange-500/20 disabled:opacity-50"
+            >
+              <HiOutlineCheckCircle className="h-4 w-4" />
+              {isLoading ? "Saving…" : "Save changes"}
+            </Button>
+          </motion.div>
+        </motion.form>
+      </motion.div>
     </div>
   );
 }
-
-export default UpdateProfile;
