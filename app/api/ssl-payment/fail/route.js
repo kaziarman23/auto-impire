@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import Order from "@/app/models/orderList.model";
-import transactionList from "@/app/redux/api/transactionListApi";
+import TransactionList from "@/app/models/transactionList.model";
 
 export async function POST(request) {
   const formData = await request.formData();
@@ -23,7 +23,7 @@ export async function POST(request) {
   await order.save();
 
   // Create a transaction record for the failed payment
-  await transactionList.create({
+  await TransactionList.create({
     userId: order.buyerId,
     buyerName: order.buyerName,
     buyerEmail: order.buyerEmail,
