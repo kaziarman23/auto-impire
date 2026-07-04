@@ -10,8 +10,12 @@ import {
   HiOutlineShieldCheck,
   HiOutlineChatBubbleLeftRight,
   HiOutlineCube,
+  HiOutlineReceiptRefund,
+  HiOutlineUserCircle,
 } from "react-icons/hi2";
 import { PiCarLight } from "react-icons/pi";
+import useCurrentUser from "@/hooks/useCurrentUser";
+import Loading from "@/app/loading";
 
 const STATS = [
   { id: "listings", label: "Active listings", value: 148, icon: PiCarLight },
@@ -51,10 +55,30 @@ const ACTIONS = [
   },
 ];
 
+const USER_LINKS = [
+  {
+    icon: PiCarLight,
+    title: "Browse cars",
+    desc: "Explore our full vehicle catalogue",
+    href: "/cars",
+  },
+  {
+    icon: HiOutlineReceiptRefund,
+    title: "My orders",
+    desc: "View your purchase history and status",
+    href: "dashboard/manageTransections",
+  },
+  {
+    icon: HiOutlineUserCircle,
+    title: "My profile",
+    desc: "Update your name, photo and details",
+    href: "dashboard/profile",
+  },
+];
+
 function useCountUp(target, duration = 1200) {
   const [count, setCount] = useState(0);
   const raf = useRef(null);
-
   useEffect(() => {
     const start = performance.now();
     const tick = (now) => {
@@ -66,14 +90,12 @@ function useCountUp(target, duration = 1200) {
     raf.current = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf.current);
   }, [target, duration]);
-
   return count;
 }
 
 function StatCard({ stat, index }) {
   const count = useCountUp(stat.value);
   const Icon = stat.icon;
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
@@ -98,7 +120,6 @@ function StatCard({ stat, index }) {
 
 function ActionCard({ action, index }) {
   const Icon = action.icon;
-
   return (
     <motion.a
       href={action.href}
@@ -145,10 +166,9 @@ function SectionLabel({ children, live = false }) {
   );
 }
 
-export default function DashboardPage() {
+function AdminDashboard({ user }) {
   return (
     <div className="px-6 py-8 text-white">
-      {/* Hero */}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -167,7 +187,6 @@ export default function DashboardPage() {
         </p>
       </motion.div>
 
-      {/* Stats */}
       <div className="mb-6">
         <SectionLabel live>Live metrics</SectionLabel>
         <div className="grid grid-cols-3 gap-3">
@@ -177,7 +196,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="mb-6">
         <SectionLabel>Quick actions</SectionLabel>
         <div className="grid grid-cols-2 gap-3">
@@ -187,7 +205,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* About */}
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}
@@ -210,5 +227,85 @@ export default function DashboardPage() {
         </div>
       </motion.div>
     </div>
+  );
+}
+
+function UserDashboard({ user }) {
+  return (
+    <div className="px-6 py-8 text-white">
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.25, 0.1, 0.25, 1] }}
+        className="mb-8"
+      >
+        <p className="mb-1 text-[11px] uppercase tracking-widest text-gray-600">
+          Dashboard
+        </p>
+        <h1 className="mb-2 text-2xl font-medium leading-tight">
+          Hey,{" "}
+          <span className="capitalize text-orange-400">
+            {user?.userName || "there"}
+          </span>{" "}
+          👋
+        </h1>
+        <p className="max-w-md text-[15px] leading-relaxed text-gray-400">
+          Welcome to AutoEmpire. Browse vehicles, track your orders, and manage
+          your account below.
+        </p>
+      </motion.div>
+
+      <div className="mb-8">
+        <SectionLabel>Quick access</SectionLabel>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          {USER_LINKS.map((link, i) => (
+            <ActionCard key={link.title} action={link} index={i} />
+          ))}
+        </div>
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="border-white/8 rounded-xl border bg-white/5 p-5"
+      >
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/15">
+            <HiOutlineShieldCheck className="h-5 w-5 text-orange-400" />
+          </div>
+          <div>
+            <p className="mb-1 text-sm font-medium text-white">
+              About AutoEmpire
+            </p>
+            <p className="text-[13px] leading-relaxed text-gray-500">
+              We specialize in premium vehicle management and sales. Whether
+              you&#39;re browsing top-tier listings or tracking a recent
+              purchase, our platform puts everything you need in one place.
+            </p>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { user, isLoading, isError, error } = useCurrentUser();
+
+  if (isLoading) return <Loading message="Loading..." />;
+  if (isError)
+    return (
+      <p className="p-6 text-sm text-red-400">
+        {error?.message || "Failed to load."}
+      </p>
+    );
+
+  const isAdmin = user?.userRole === "admin";
+  return isAdmin ? (
+    <AdminDashboard user={user} />
+  ) : (
+    <UserDashboard user={user} />
   );
 }

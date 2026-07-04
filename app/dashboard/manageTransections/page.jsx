@@ -9,7 +9,7 @@ import { useGetTransactionsQuery } from "@/app/redux/api/transactionListApi";
 import PaymentCell from "@/components/cells/paymentCell/page";
 import OrderCell from "@/components/cells/orderCell/page";
 
-// Summary strip 
+// Summary strip
 
 function TransactionSummary({ data }) {
   const total = data.length;
@@ -37,7 +37,7 @@ function TransactionSummary({ data }) {
   );
 }
 
-// Page 
+// Page
 
 function MyCarsPage() {
   const { data, isLoading, isError, error } = useGetTransactionsQuery();
